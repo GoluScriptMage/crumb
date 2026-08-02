@@ -26,12 +26,7 @@ var noteCmd = &cobra.Command{
 				return
 			}
 		}
-		readData, err := store.ReadData()
-		if err != nil {
-			fmt.Println("Cannot get data")
-			return
-		}
-		for i, note := range readData.Notes {
+		for i, note := range data.Notes {
 			fmt.Printf("%d: %s\n", i+1, note)
 		}
 	},
