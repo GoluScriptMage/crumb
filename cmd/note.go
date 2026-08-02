@@ -1,30 +1,39 @@
 package cmd
 
 import (
+	"crumb/store"
 	"fmt"
 	"github.com/spf13/cobra"
-	"os"
-	"path/filepath"
 )
 
 var noteCmd = &cobra.Command{
 	Use:   "note [text]",
 	Short: "Note is command to save notes",
 	Run: func(cmd *cobra.Command, args []string) {
-		// Check if any arguments were provided
-		if len(args) != 0 {
-			fmt.Println(args[0])
-		}
 
-		// Get the cwd and read the file
-		currentDir, _ := os.Getwd()
-		fsPath := filepath.Join(currentDir, "store", "json.go")
-
-		bytes, err := os.ReadFile(fsPath)
-		if err != nil{
-			fmt.Println("Error reading file:", err)
+		// get the data
+		data, err := store.ReadData()
+		if err != nil {
+			fmt.Println("Cannot get data")
+			return
 		}
-		fmt.Println(string(bytes))
+		// If there are arg to add, append it to notes
+		if len(args) > 0 {
+			data.Notes = append(data.Notes, args[0])
+			err = store.WriteData(data)
+			if err != nil {
+				fmt.Println("Cannot write data")
+				return
+			}
+		}
+		readData, err := store.ReadData()
+		if err != nil {
+			fmt.Println("Cannot get data")
+			return
+		}
+		for i, note := range readData.Notes {
+			fmt.Printf("%d: %s\n", i+1, note)
+		}
 	},
 }
 
