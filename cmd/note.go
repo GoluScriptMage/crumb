@@ -26,8 +26,8 @@ var noteCmd = &cobra.Command{
 				return
 			}
 		}
-		for i, note := range data.Notes {
-			fmt.Printf("%d: %s\n", i+1, note)
+		for i := 0; i < len(data.Notes); i++ {
+			fmt.Printf("%d: %s\n", i+1, data.Notes[len(data.Notes)-1-i])
 		}
 	},
 }

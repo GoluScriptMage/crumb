@@ -27,8 +27,8 @@ var ideaCmd = &cobra.Command{
 			}
 		}
 
-		for i, idea := range data.Ideas {
-			fmt.Printf("%d: %s\n", i+1, idea)
+		for i := 0; i < len(data.Ideas); i++ {
+			fmt.Printf("%d: %s\n", i+1, data.Ideas[len(data.Ideas)-1-i])
 		}
 	},
 }
