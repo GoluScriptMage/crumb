@@ -29,7 +29,7 @@ var nextCmd = &cobra.Command{
 		// For clearing focus or saving new focus
 		if args[0] == "clear" {
 			data.Next = ""
-			fmt.Println("Focus cleared: ")
+			fmt.Println("Focus cleared")
 		} else {
 			data.Next = args[0]
 			fmt.Println("Focus updated")
