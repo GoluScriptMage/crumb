@@ -1,46 +1,48 @@
 package cmd
 
 import (
+	"crumb/helpers"
 	"crumb/store"
-	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
+// nextCmd manages the next focus: show, set, or clear.
 var nextCmd = &cobra.Command{
-	Use:   "next [text]",
-	Short: "Next is command to save next actions",
-	Run: func(cmd *cobra.Command, args []string) {
-		data, err := store.ReadData()
-
-		if err != nil {
-			fmt.Println("Error read data")
-			return
-		}
-		// For displaying current focus
-		if len(args) == 0 {
-			if data.Next == "" {
-				fmt.Println("No current focus set.")
-			} else {
-				fmt.Println("Current focus: ", data.Next)
+	Use:   "next [text|clear]",
+	Short: "Get or set the next focus",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		switch len(args) {
+		case 0:
+			// Show current focus
+			return store.Update(func(data *store.CrumbData) error {
+				if data.Next == "" {
+					helpers.Info("No current focus set.")
+				} else {
+					helpers.Info("Current focus: %s", data.Next)
+				}
+				return nil
+			})
+		case 1:
+			switch args[0] {
+			case "clear":
+				// Clear focus
+				return store.Update(func(data *store.CrumbData) error {
+					data.Next = ""
+					helpers.Success("Focus cleared.")
+					return nil
+				})
+			default:
+				// Set new focus
+				return store.Update(func(data *store.CrumbData) error {
+					data.Next = args[0]
+					helpers.Success("Focus updated.")
+					return nil
+				})
 			}
-			return
-		}
-
-		// For clearing focus or saving new focus
-		if args[0] == "clear" {
-			data.Next = ""
-			fmt.Println("Focus cleared")
-		} else {
-			data.Next = args[0]
-			fmt.Println("Focus updated")
-		}
-
-		// Update the data in the JSON file
-		err = store.WriteData(data)
-
-		if err != nil {
-			fmt.Println("Cannot write data")
-			return
+		default:
+			helpers.Error("Usage: crumb next [text|clear]")
+			return nil
 		}
 	},
 }
