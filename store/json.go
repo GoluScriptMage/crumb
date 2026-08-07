@@ -7,8 +7,9 @@ import (
 )
 
 type Task struct {
-	ID   string `json:"id"`
-	Text string `json:"text"`
+	ID     string `json:"id"`
+	Text   string `json:"text"`
+	Status string `json:"status"` // pending | done | canceled
 }
 
 type CrumbData struct {
