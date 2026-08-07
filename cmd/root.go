@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"crumb/helpers"
 	"crumb/store"
 
@@ -14,27 +16,37 @@ var RootCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Show dashboard: next focus, task count, recent notes/ideas
 		return store.Update(func(data *store.CrumbData) error {
+			fmt.Println()
 			helpers.Info("=== Crumb Dashboard ===")
+			fmt.Println()
 
 			// Next focus
 			if data.Next != "" {
-				helpers.Success("  Focus: %s", data.Next)
+				fmt.Printf("  %sFocus:%s %s%s%s\n", helpers.Cyan, helpers.Reset, helpers.Bold+helpers.Green, data.Next, helpers.Reset)
 			} else {
 				helpers.Dim("  Focus: (none)")
 			}
+			fmt.Println()
 
 			// Active tasks
-			pendingCount := 0
+			var pendingTasks []store.Task
 			for _, t := range data.Tasks {
 				if t.Status == "pending" {
-					pendingCount++
+					pendingTasks = append(pendingTasks, t)
 				}
 			}
-			if pendingCount > 0 {
-				helpers.Info("  Tasks: %d active", pendingCount)
+			if len(pendingTasks) > 0 {
+				helpers.Info("  Tasks: %d active", len(pendingTasks))
+				for _, t := range pendingTasks {
+					fmt.Printf("    %s• [#%s]%s %s%s%s %s(%s)%s\n",
+						helpers.Gray, t.ID, helpers.Reset,
+						helpers.White, t.Text, helpers.Reset,
+						helpers.Yellow, t.Status, helpers.Reset)
+				}
 			} else {
 				helpers.Dim("  Tasks: (none)")
 			}
+			fmt.Println()
 
 			// Recent notes (last 3)
 			if len(data.Notes) > 0 {
@@ -45,9 +57,10 @@ var RootCmd = &cobra.Command{
 					end = 0
 				}
 				for i := start; i >= end; i-- {
-					helpers.Dim("    • %s", data.Notes[i])
+					fmt.Printf("    %s•%s %s%s%s\n", helpers.Gray, helpers.Reset, helpers.White, data.Notes[i], helpers.Reset)
 				}
 			}
+			fmt.Println()
 
 			// Recent ideas (last 3)
 			if len(data.Ideas) > 0 {
@@ -58,9 +71,10 @@ var RootCmd = &cobra.Command{
 					end = 0
 				}
 				for i := start; i >= end; i-- {
-					helpers.Dim("    • %s", data.Ideas[i])
+					fmt.Printf("    %s•%s %s%s%s\n", helpers.Gray, helpers.Reset, helpers.White, data.Ideas[i], helpers.Reset)
 				}
 			}
+			fmt.Println()
 
 			return nil
 		})

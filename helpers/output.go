@@ -10,6 +10,7 @@ const (
 	Red    = "\033[31m"
 	Cyan   = "\033[36m"
 	Gray   = "\033[90m"
+	White  = "\033[97m"
 )
 
 // Info prints an informational message in cyan.

@@ -92,19 +92,6 @@ var cancelCmd = &cobra.Command{
 	},
 }
 
-// failCmd marks a task as failed by ID (keeps task in list, updates status).
-var failCmd = &cobra.Command{
-	Use:   "fail [id]",
-	Short: "Mark a task as failed",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) == 0 {
-			helpers.Error("Usage: crumb fail <id>")
-			return nil
-		}
-		return updateTaskStatus(args[0], "failed", "Task %s marked as failed.")
-	},
-}
-
 // updateTaskStatus finds a task by ID and updates its status in place.
 func updateTaskStatus(taskID, status, successMsg string) error {
 	return store.Update(func(data *store.CrumbData) error {
@@ -131,5 +118,4 @@ func init() {
 	RootCmd.AddCommand(taskCmd)
 	RootCmd.AddCommand(doneCmd)
 	RootCmd.AddCommand(cancelCmd)
-	RootCmd.AddCommand(failCmd)
 }
