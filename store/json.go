@@ -80,3 +80,16 @@ func WriteData(data CrumbData) error {
 
 	return os.WriteFile(dbPath, payload, 0644)
 }
+
+// Update reads data, applies the modification function, and writes back atomically.
+// Eliminates duplicate read-modify-write boilerplate in commands.
+func Update(fn func(*CrumbData) error) error {
+	data, err := ReadData()
+	if err != nil {
+		return err
+	}
+	if err := fn(&data); err != nil {
+		return err
+	}
+	return WriteData(data)
+}

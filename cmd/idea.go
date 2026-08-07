@@ -1,34 +1,38 @@
 package cmd
 
 import (
+	"crumb/helpers"
 	"crumb/store"
-	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
+// ideaCmd manages ideas: add multiple with arguments, list without.
 var ideaCmd = &cobra.Command{
-	Use:   "idea [text]",
-	Short: "Idea is command to save ideas",
-	Run: func(cmd *cobra.Command, args []string) {
-		data, err := store.ReadData()
-		if err != nil {
-			fmt.Println("Error reading ideas: ", err)
-			return
-		}
-
-		if len(args) > 0 {
-			// Save all the ideas
-			data.Ideas = append(data.Ideas, args...)
-			err = store.WriteData(data)
-
-			if err != nil {
-				fmt.Println("Cannot write idea")
-				return
-			}
-		}
-
-		for i := 0; i < len(data.Ideas); i++ {
-			fmt.Printf("%d: %s\n", i+1, data.Ideas[len(data.Ideas)-1-i])
+	Use:   "idea [text...]",
+	Short: "Save or list ideas",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		switch len(args) {
+		case 0:
+			// List ideas (newest first)
+			return store.Update(func(data *store.CrumbData) error {
+				if len(data.Ideas) == 0 {
+					helpers.Info("No ideas yet.")
+					return nil
+				}
+				helpers.Info("💡 Ideas (newest first):")
+				for i := len(data.Ideas) - 1; i >= 0; i-- {
+					helpers.Dim("  %d: %s", len(data.Ideas)-i, data.Ideas[i])
+				}
+				return nil
+			})
+		default:
+			// Add all provided ideas
+			return store.Update(func(data *store.CrumbData) error {
+				data.Ideas = append(data.Ideas, args...)
+				helpers.Success("Ideas saved.")
+				return nil
+			})
 		}
 	},
 }
