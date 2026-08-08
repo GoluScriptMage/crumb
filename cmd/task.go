@@ -43,26 +43,32 @@ var taskCmd = &cobra.Command{
 		// Switch on first argument
 		switch args[0] {
 		case "clear":
-			// Clear all tasks
-			return store.Update(func(data *store.CrumbData) error {
-				data.Tasks = []store.Task{}
-				helpers.Success("All tasks cleared.")
-				return nil
-			})
+			// Type two times to clear all tasks so we don't accidentally delete them.
+			if len(args) > 1 && args[1] == "clear" {
+				// Clear all tasks
+				return store.Update(func(data *store.CrumbData) error {
+					data.Tasks = []store.Task{}
+					helpers.Success("All tasks cleared.")
+					return nil
+				})
+			}
 		default:
 			// Add new task (first arg is the task text)
 			return store.Update(func(data *store.CrumbData) error {
-				id := generateShortId()
-				newTask := store.Task{
-					ID:     id,
-					Text:   args[0],
-					Status: "pending",
+				for _, task := range args {
+					id := generateShortId()
+					newTask := store.Task{
+						ID:     id,
+						Text:   task,
+						Status: "pending",
+					}
+					data.Tasks = append(data.Tasks, newTask)
+					helpers.Success("Task added: %s", task)
 				}
-				data.Tasks = append(data.Tasks, newTask)
-				helpers.Success("Task added: %s", newTask.Text)
 				return nil
 			})
 		}
+		return nil
 	},
 }
 
