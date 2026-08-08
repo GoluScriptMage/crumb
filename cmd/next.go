@@ -9,7 +9,7 @@ import (
 
 // nextCmd manages the next focus: show, set, or clear.
 var nextCmd = &cobra.Command{
-	Use:   "next [text|clear]",
+	Use:   "next [text]",
 	Short: "Get or set the next focus",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		switch len(args) {
@@ -41,7 +41,7 @@ var nextCmd = &cobra.Command{
 				})
 			}
 		default:
-			helpers.Error("Usage: crumb next [text|clear]")
+			helpers.Error("Usage: crumb next [text]")
 			return nil
 		}
 	},
