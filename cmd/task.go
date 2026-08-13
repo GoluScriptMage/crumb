@@ -10,12 +10,27 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// generateShortId creates a 3-char hex ID for tasks.
-func generateShortId() string {
+// GenerateShortId creates a 3-char hex ID for tasks (exported for tests).
+func GenerateShortId() string {
 	bytes := make([]byte, 4)
 	rand.Read(bytes)
 	return fmt.Sprintf("%x", bytes)[:3]
 }
+
+// TaskCmd returns the task command (exported for tests).
+func TaskCmd() *cobra.Command { return taskCmd }
+
+// DoneCmd returns the done command (exported for tests).
+func DoneCmd() *cobra.Command { return doneCmd }
+
+// CancelCmd returns the cancel command (exported for tests).
+func CancelCmd() *cobra.Command { return cancelCmd }
+
+// DeleteCmd returns the delete command (exported for tests).
+func DeleteCmd() *cobra.Command { return deleteCmd }
+
+// ClearCmd returns the clear command (exported for tests).
+func ClearCmd() *cobra.Command { return clearCmd }
 
 // taskCmd manages tasks: add, list, clear.
 var taskCmd = &cobra.Command{
@@ -56,7 +71,7 @@ var taskCmd = &cobra.Command{
 			// Add new task (first arg is the task text)
 			return store.Update(func(data *store.CrumbData) error {
 				for _, task := range args {
-					id := generateShortId()
+					id := GenerateShortId()
 					newTask := store.Task{
 						ID:     id,
 						Text:   task,

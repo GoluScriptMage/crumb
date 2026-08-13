@@ -7,6 +7,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NextCmd returns the next command (exported for tests).
+func NextCmd() *cobra.Command { return nextCmd }
+
 // nextCmd manages the next focus: show, set, or clear.
 var nextCmd = &cobra.Command{
 	Use:   "next [text]",

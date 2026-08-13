@@ -20,8 +20,21 @@ type CrumbData struct {
 	Done  []string `json:"done"`
 }
 
+// dbPathOverride allows tests (or other callers) to redirect storage
+// away from the default user config location.
+var dbPathOverride string
+
+// SetDbPathOverride redirects ReadData/WriteData to a custom path.
+// Pass an empty string to revert to the default user config location.
+func SetDbPathOverride(path string) {
+	dbPathOverride = path
+}
+
 // GetDbPath resolves the path to ~/.config/crumb/data.json
 func GetDbPath() (string, error) {
+	if dbPathOverride != "" {
+		return dbPathOverride, nil
+	}
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
