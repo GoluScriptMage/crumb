@@ -130,6 +130,21 @@ var deleteCmd = &cobra.Command{
 }
 
 
+// Clear all tasks command (for convenience)
+var clearCmd = &cobra.Command{
+	Use:   "clear [clear]",
+	Short: "Clear all tasks",
+	RunE: func(cmd *cobra.Command, args []string) error {
+
+		if len(args) == 0 || args[0] != "clear" {
+			helpers.Error("Usage: crumb clear clear")
+			return nil
+		}
+
+		return updateTaskStatus("", "clear", "")
+	},
+}
+
 // updateTaskStatus finds a task by ID and updates its status in place
 func updateTaskStatus(taskID, status, successMsg string) error {
 	return store.Update(func(data *store.CrumbData) error {
