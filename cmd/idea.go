@@ -7,6 +7,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// IdeaCmd returns the idea command (exported for tests).
+func IdeaCmd() *cobra.Command { return ideaCmd }
+
 // ideaCmd manages ideas: add multiple with arguments, list without.
 var ideaCmd = &cobra.Command{
 	Use:   "idea [text...]",

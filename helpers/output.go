@@ -38,7 +38,7 @@ func Dim(format string, args ...any) {
 	fmt.Printf(Gray+format+Reset+"\n", args...)
 }
 
-// FormatStatus returns a colored status badge.
+// FormatStatus returns a colored status badge (exported for tests).
 func FormatStatus(status string) string {
 	switch status {
 	case "done":

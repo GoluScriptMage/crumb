@@ -1,0 +1,28 @@
+# Crumb CLI — Command Test Plan
+
+Status: [x] done  [ ] pending
+
+## Commands
+- [x] task add (multiple args) + list (no args)
+- [x] task clear safety (single `clear` no-op, `clear clear` wipes)
+- [x] done <id> marks task done (+ missing id handled)
+- [x] cancel <id> marks task canceled (+ no-args handled)
+- [x] delete <id> removes task (+ no-args handled)
+- [x] clear clear wipes all tasks (+ no-args handled)
+- [x] idea add (multiple) + list (no args)
+- [x] note add (single) + list + multi-arg guard
+- [x] next set / clear / show / multi-arg guard
+
+## Helpers / utils
+- [x] GenerateShortId (3-char hex, randomness)
+- [x] FormatStatus (all status branches)
+
+## Store
+- [x] ReadData missing file -> empty struct
+- [x] WriteData round-trip (write then read back)
+- [x] Update applies mutation and persists
+- [x] GetDbPath override redirect (temp dir)
+
+## Layout
+- Tests live in `tests/` package (black-box) — NOT inside cmd/ or store/.
+- Run with: `go test ./...`

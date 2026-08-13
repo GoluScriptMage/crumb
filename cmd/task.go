@@ -10,12 +10,27 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// generateShortId creates a 3-char hex ID for tasks.
-func generateShortId() string {
+// GenerateShortId creates a 3-char hex ID for tasks (exported for tests).
+func GenerateShortId() string {
 	bytes := make([]byte, 4)
 	rand.Read(bytes)
 	return fmt.Sprintf("%x", bytes)[:3]
 }
+
+// TaskCmd returns the task command (exported for tests).
+func TaskCmd() *cobra.Command { return taskCmd }
+
+// DoneCmd returns the done command (exported for tests).
+func DoneCmd() *cobra.Command { return doneCmd }
+
+// CancelCmd returns the cancel command (exported for tests).
+func CancelCmd() *cobra.Command { return cancelCmd }
+
+// DeleteCmd returns the delete command (exported for tests).
+func DeleteCmd() *cobra.Command { return deleteCmd }
+
+// ClearCmd returns the clear command (exported for tests).
+func ClearCmd() *cobra.Command { return clearCmd }
 
 // taskCmd manages tasks: add, list, clear.
 var taskCmd = &cobra.Command{
@@ -56,7 +71,7 @@ var taskCmd = &cobra.Command{
 			// Add new task (first arg is the task text)
 			return store.Update(func(data *store.CrumbData) error {
 				for _, task := range args {
-					id := generateShortId()
+					id := GenerateShortId()
 					newTask := store.Task{
 						ID:     id,
 						Text:   task,
@@ -81,7 +96,13 @@ var doneCmd = &cobra.Command{
 			helpers.Error("Usage: crumb done <id>")
 			return nil
 		}
-		return updateTaskStatus(args[0], "done", "Task %s marked as done.")
+		for _, id := range args {
+			err := updateTaskStatus(id, "done", "Task %s marked as done.")
+			if err != nil {
+				return err
+			}
+		}
+		return nil
 	},
 }
 
@@ -94,18 +115,71 @@ var cancelCmd = &cobra.Command{
 			helpers.Error("Usage: crumb cancel <id>")
 			return nil
 		}
-		return updateTaskStatus(args[0], "canceled", "Task %s canceled.")
+		for _, id := range args {
+			err := updateTaskStatus(id, "canceled", "Task %s canceled.")
+			if err != nil {
+				return err
+			}
+		}
+		return nil
 	},
 }
 
-// updateTaskStatus finds a task by ID and updates its status in place.
+// deleteCmd deletes a task by ID (removes it from the list).
+var deleteCmd = &cobra.Command{
+	Use:   "delete [id]",
+	Short: "Delete a task by ID",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			helpers.Error("Usage: crumb delete <id>")
+			return nil
+		}
+		for _, id := range args {
+			err := updateTaskStatus(id, "delete", "Task %s deleted.")
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	},
+}
+
+
+// Clear all tasks command (for convenience)
+var clearCmd = &cobra.Command{
+	Use:   "clear [clear]",
+	Short: "Clear all tasks",
+	RunE: func(cmd *cobra.Command, args []string) error {
+
+		if len(args) == 0 || args[0] != "clear" {
+			helpers.Error("Usage: crumb clear clear")
+			return nil
+		}
+
+		return updateTaskStatus("", "clear", "")
+	},
+}
+
+// updateTaskStatus finds a task by ID and updates its status in place
 func updateTaskStatus(taskID, status, successMsg string) error {
 	return store.Update(func(data *store.CrumbData) error {
 		found := false
+		// For clearing all
+		if status == "clear" {
+			helpers.Warn("Clearing all tasks...")
+			data.Tasks = []store.Task{}
+			helpers.Success("All tasks cleared.")
+			return nil
+		}
+
 		for i := range data.Tasks {
 			if data.Tasks[i].ID == taskID {
 				data.Tasks[i].Status = status
 				found = true
+				// Delete the task if the status is "clear" or "delete"
+				if status == "delete" {
+					data.Tasks = append(data.Tasks[:i], data.Tasks[i+1:]...)
+				}
 				break
 			}
 		}
@@ -124,4 +198,6 @@ func init() {
 	RootCmd.AddCommand(taskCmd)
 	RootCmd.AddCommand(doneCmd)
 	RootCmd.AddCommand(cancelCmd)
+	RootCmd.AddCommand(deleteCmd)
+	RootCmd.AddCommand(clearCmd)
 }

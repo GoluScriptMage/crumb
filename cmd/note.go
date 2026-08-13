@@ -7,6 +7,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// NoteCmd returns the note command (exported for tests).
+func NoteCmd() *cobra.Command { return noteCmd }
+
 // noteCmd manages notes: add with argument, list without.
 var noteCmd = &cobra.Command{
 	Use:   "note [text]",
