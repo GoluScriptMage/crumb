@@ -98,7 +98,20 @@ var cancelCmd = &cobra.Command{
 	},
 }
 
-// updateTaskStatus finds a task by ID and updates its status in place.
+// deleteCmd deletes a task by ID (removes it from the list).
+var deleteCmd = &cobra.Command{
+	Use:   "delete [id]",
+	Short: "Delete a task by ID",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			helpers.Error("Usage: crumb delete <id>")
+			return nil
+		}
+		return updateTaskStatus(args[0], "delete", "Task %s deleted.")
+	},
+}
+
+// updateTaskStatus finds a task by ID and updates its status in place
 func updateTaskStatus(taskID, status, successMsg string) error {
 	return store.Update(func(data *store.CrumbData) error {
 		found := false
@@ -106,6 +119,10 @@ func updateTaskStatus(taskID, status, successMsg string) error {
 			if data.Tasks[i].ID == taskID {
 				data.Tasks[i].Status = status
 				found = true
+				// Delete the task if the status is "clear" or "delete"
+				if status == "clear" || status == "delete" {
+					data.Tasks = append(data.Tasks[:i], data.Tasks[i+1:]...)
+				}
 				break
 			}
 		}
@@ -124,4 +141,5 @@ func init() {
 	RootCmd.AddCommand(taskCmd)
 	RootCmd.AddCommand(doneCmd)
 	RootCmd.AddCommand(cancelCmd)
+	RootCmd.AddCommand(deleteCmd)
 }
