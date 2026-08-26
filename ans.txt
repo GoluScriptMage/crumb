@@ -2,3 +2,4 @@ Ans 1.
 -> The data flow is like this we create dfs and call in root for left and right we will check for largest sumPath using left, right search and compare the left and right at root
 -> The time complexity is height of tree o(h) and space compelxity is O(h) for recursive stack
 -> Code: 
+nothing
