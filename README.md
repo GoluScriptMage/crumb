@@ -42,25 +42,23 @@ sudo mv crumb /usr/local/bin/
 
 | Command | What it does |
 |---------|--------------|
-| `crumb note "text"` | Save a note (single arg) |
-| `crumb note` | List notes (newest first) |
-| `crumb idea "a" "b"` | Save multiple ideas at once |
-| `crumb idea` | List ideas (newest first) |
-| `crumb task "do thing"` | Add a task |
-| `crumb task` | List tasks with status badges |
-| `crumb task clear` | Nuke all tasks (double keyword) |
-| `crumb clear clear` | Nuke all tasks (dedicated command) |
+| `crumb` | Dashboard: active sprint, tasks & recent scratchpad |
+| `crumb task` | List pending tasks |
+| `crumb task "do thing"` | Add a task with short hex ID |
 | `crumb done <id>` | Mark task ✔ done |
-| `crumb cancel <id>` | Mark task ✖ canceled |
 | `crumb fail <id>` | Mark task ✖ failed |
+| `crumb del <id>` | Delete a task by ID |
+| `crumb del all` | Nuke all tasks |
+| `crumb note` | List notes |
+| `crumb note "text"` | Save note |
+| `crumb note del <num>` | Delete note by index (or `del all`) |
+| `crumb idea` | List ideas |
+| `crumb idea "text"` | Save idea |
+| `crumb idea del <num>` | Delete idea by index (or `del all`) |
+| `crumb timer <mins> [task]` | Start live running aesthetic desk timer |
+| `crumb timer` | Attach to running timer (or view status) |
+| `crumb timer stop` | Stop / clear focus timer |
 | `crumb version` | Print crumb version |
-| `crumb --version` | Print crumb version (Cobra flag) |
-| `crumb edit <id> <text>` | Edit a task's text by ID |
-| `crumb delete <id>` | Delete a task by ID |
-| `crumb next "focus"` | Set your current focus |
-| `crumb next` | Show current focus |
-| `crumb next clear` | Clear focus |
-| `crumb` | Dashboard: focus + tasks + recent notes/ideas |
 
 ---
 

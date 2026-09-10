@@ -25,7 +25,7 @@ var noteCmd = &cobra.Command{
 				return err
 			}
 			if len(data.Notes) == 0 {
-				helpers.Info("No notes yet.")
+				helpers.Dim("  (no notes — scratchpad is clear)")
 				return nil
 			}
 			helpers.Info("📝 Notes:")

@@ -36,6 +36,11 @@ func SetDbPathOverride(path string) {
 	dbPathOverride = path
 }
 
+// IsTestEnv returns true if dbPathOverride is set (unit tests).
+func IsTestEnv() bool {
+	return dbPathOverride != ""
+}
+
 // GetDbPath resolves the path to ~/.config/crumb/data.json
 func GetDbPath() (string, error) {
 	if dbPathOverride != "" {

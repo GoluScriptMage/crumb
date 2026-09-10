@@ -25,7 +25,7 @@ var ideaCmd = &cobra.Command{
 				return err
 			}
 			if len(data.Ideas) == 0 {
-				helpers.Info("No ideas yet.")
+				helpers.Dim("  (no ideas — scratchpad is clear)")
 				return nil
 			}
 			helpers.Info("💡 Ideas:")

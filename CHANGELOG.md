@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.4.0] — 2026-09-10
+
+### Added
+- `crumb timer <minutes> [task]` — live running aesthetic terminal desk clock with centered ASCII mascots (Sia, Pikachu, Rabbit, Undead Knight), clean progress bar, and Ctrl+C background detach.
+- `crumb del <id>` & `crumb del all` — intuitive, streamlined task deletion.
+- Index-based deletion for notes (`crumb note del <num>`) and ideas (`crumb idea del <num>`).
+- Subtle monochrome tactile CLI feedback (dim prefixes, bold white typography, zero harsh RGB clown colors).
+
+### Changed
+- Converted all read operations (dashboard, task list, note list, idea list) to `store.ReadData()` (zero disk IO on reads).
+- Deprecated and removed bloated `next`, `cancel`, `edit`, and `clear clear` commands.
+
 ## [v1.3.0] — 2026-09-08
 
 ### Added

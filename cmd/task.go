@@ -41,7 +41,7 @@ var taskCmd = &cobra.Command{
 				return err
 			}
 			if len(data.Tasks) == 0 {
-				helpers.Info("📋 No tasks.")
+				helpers.Dim("  (no active tasks — scratchpad is clear)")
 				return nil
 			}
 			helpers.Info("📋 Tasks:")

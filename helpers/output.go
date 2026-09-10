@@ -5,6 +5,7 @@ import "fmt"
 const (
 	Reset  = "\033[0m"
 	Bold   = "\033[1m"
+	DimTxt = "\033[2m"
 	Green  = "\033[32m"
 	Yellow = "\033[33m"
 	Red    = "\033[31m"
@@ -13,27 +14,31 @@ const (
 	White  = "\033[97m"
 )
 
-// Info prints an informational message in cyan.
-func Info(format string, args ...any) {
-	fmt.Printf(Cyan+format+Reset+"\n", args...)
-}
-
-// Success prints a success message in green.
+// Success prints a subtle confirmation message: dim gray prefix with bold white text.
 func Success(format string, args ...any) {
-	fmt.Printf(Green+format+Reset+"\n", args...)
+	msg := fmt.Sprintf(format, args...)
+	fmt.Printf("%s  ✔  %s%s%s%s\n", Gray, Reset, Bold, msg, Reset)
 }
 
-// Error prints an error message in red.
+// Error prints a subtle error message: red prefix with muted text.
 func Error(format string, args ...any) {
-	fmt.Printf(Red+format+Reset+"\n", args...)
+	msg := fmt.Sprintf(format, args...)
+	fmt.Printf("%s  ✖  %s%s\n", Red, Reset, msg)
 }
 
-// Warn prints a warning message in yellow.
+// Warn prints a subtle warning message: yellow prefix with muted text.
 func Warn(format string, args ...any) {
-	fmt.Printf(Yellow+format+Reset+"\n", args...)
+	msg := fmt.Sprintf(format, args...)
+	fmt.Printf("%s  !  %s%s\n", Yellow, Reset, msg)
 }
 
-// Dim prints a dimmed message in gray.
+// Info prints a clean informational line.
+func Info(format string, args ...any) {
+	msg := fmt.Sprintf(format, args...)
+	fmt.Println(msg)
+}
+
+// Dim prints dimmed/muted gray text.
 func Dim(format string, args ...any) {
 	fmt.Printf(Gray+format+Reset+"\n", args...)
 }
