@@ -9,15 +9,21 @@ import (
 type Task struct {
 	ID     string `json:"id"`
 	Text   string `json:"text"`
-	Status string `json:"status"` // pending | done | canceled
+	Status string `json:"status"` // pending | done | failed
+}
+
+type TimerState struct {
+	Task      string `json:"task"`
+	Minutes   int    `json:"minutes"`
+	StartedAt int64  `json:"started_at"`
+	Duration  int    `json:"duration"` // in seconds
 }
 
 type CrumbData struct {
-	Next  string   `json:"next"`
-	Tasks []Task   `json:"tasks"`
-	Ideas []string `json:"ideas"`
-	Notes []string `json:"notes"`
-	Done  []string `json:"done"`
+	Tasks []Task      `json:"tasks"`
+	Ideas []string    `json:"ideas"`
+	Notes []string    `json:"notes"`
+	Timer *TimerState `json:"timer,omitempty"`
 }
 
 // dbPathOverride allows tests (or other callers) to redirect storage
@@ -49,9 +55,13 @@ func ReadData() (CrumbData, error) {
 		return CrumbData{}, err
 	}
 
-	// If file doesn't exist, return empty stru0ct safely
+	// If file doesn't exist, return empty struct safely
 	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
-		return CrumbData{Notes: []string{}}, nil
+		return CrumbData{
+			Tasks: []Task{},
+			Notes: []string{},
+			Ideas: []string{},
+		}, nil
 	}
 
 	content, err := os.ReadFile(dbPath)
@@ -65,14 +75,21 @@ func ReadData() (CrumbData, error) {
 		return CrumbData{}, err
 	}
 
+	if data.Tasks == nil {
+		data.Tasks = []Task{}
+	}
 	if data.Notes == nil {
 		data.Notes = []string{}
+	}
+	if data.Ideas == nil {
+		data.Ideas = []string{}
 	}
 
 	return data, nil
 }
 
-// WriteData writes the CrumbData struct to the JSON file
+// WriteData writes the CrumbData struct to the JSON file atomically.
+// It writes to a temp file in the same directory and then renames it over the target.
 func WriteData(data CrumbData) error {
 	dbPath, err := GetDbPath()
 	if err != nil {
@@ -81,7 +98,7 @@ func WriteData(data CrumbData) error {
 
 	// Create directory if missing
 	dir := filepath.Dir(dbPath)
-	err = os.MkdirAll(dir, 0755) // Idempotent operation; won't error if dir exists
+	err = os.MkdirAll(dir, 0755)
 	if err != nil {
 		return err
 	}
@@ -91,7 +108,28 @@ func WriteData(data CrumbData) error {
 		return err
 	}
 
-	return os.WriteFile(dbPath, payload, 0644)
+	tmpFile, err := os.CreateTemp(dir, "crumb-*.tmp")
+	if err != nil {
+		return err
+	}
+	tmpPath := tmpFile.Name()
+
+	if _, err := tmpFile.Write(payload); err != nil {
+		tmpFile.Close()
+		os.Remove(tmpPath)
+		return err
+	}
+	if err := tmpFile.Close(); err != nil {
+		os.Remove(tmpPath)
+		return err
+	}
+
+	if err := os.Chmod(tmpPath, 0644); err != nil {
+		os.Remove(tmpPath)
+		return err
+	}
+
+	return os.Rename(tmpPath, dbPath)
 }
 
 // Update reads data, applies the modification function, and writes back atomically.

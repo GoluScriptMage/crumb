@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"strconv"
+	"strings"
+
 	"crumb/helpers"
 	"crumb/store"
 
@@ -10,33 +13,65 @@ import (
 // IdeaCmd returns the idea command (exported for tests).
 func IdeaCmd() *cobra.Command { return ideaCmd }
 
-// ideaCmd manages ideas: add multiple with arguments, list without.
+// ideaCmd manages ideas: add, list, delete.
 var ideaCmd = &cobra.Command{
-	Use:   "idea [text...]",
-	Short: "Save or list ideas",
+	Use:   "idea [text...|del <id>|del all]",
+	Short: "Save, list, or delete ideas",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		switch len(args) {
-		case 0:
-			// List ideas (newest first)
+		if len(args) == 0 {
+			// Read-only list
+			data, err := store.ReadData()
+			if err != nil {
+				return err
+			}
+			if len(data.Ideas) == 0 {
+				helpers.Info("No ideas yet.")
+				return nil
+			}
+			helpers.Info("💡 Ideas:")
+			for i, idea := range data.Ideas {
+				helpers.Dim("  [%d] %s", i+1, idea)
+			}
+			return nil
+		}
+
+		// Delete idea by index or all
+		if args[0] == "del" || args[0] == "delete" {
+			if len(args) < 2 {
+				helpers.Error("Usage: crumb idea del <number> or crumb idea del all")
+				return nil
+			}
+			if args[1] == "all" {
+				return store.Update(func(data *store.CrumbData) error {
+					data.Ideas = []string{}
+					helpers.Success("All ideas deleted.")
+					return nil
+				})
+			}
+			idx, err := strconv.Atoi(args[1])
+			if err != nil || idx < 1 {
+				helpers.Error("Invalid idea number: %s", args[1])
+				return nil
+			}
 			return store.Update(func(data *store.CrumbData) error {
-				if len(data.Ideas) == 0 {
-					helpers.Info("No ideas yet.")
+				if idx > len(data.Ideas) {
+					helpers.Error("Idea [%d] not found (total %d ideas).", idx, len(data.Ideas))
 					return nil
 				}
-				helpers.Info("💡 Ideas (newest first):")
-				for i := len(data.Ideas) - 1; i >= 0; i-- {
-					helpers.Dim("  %d: %s", len(data.Ideas)-i, data.Ideas[i])
-				}
-				return nil
-			})
-		default:
-			// Add all provided ideas
-			return store.Update(func(data *store.CrumbData) error {
-				data.Ideas = append(data.Ideas, args...)
-				helpers.Success("Ideas saved.")
+				deleted := data.Ideas[idx-1]
+				data.Ideas = append(data.Ideas[:idx-1], data.Ideas[idx:]...)
+				helpers.Success("Idea [%d] deleted: %s", idx, deleted)
 				return nil
 			})
 		}
+
+		// Add idea (joins multiple arguments)
+		text := strings.Join(args, " ")
+		return store.Update(func(data *store.CrumbData) error {
+			data.Ideas = append(data.Ideas, text)
+			helpers.Success("Idea saved: %s", text)
+			return nil
+		})
 	},
 }
 

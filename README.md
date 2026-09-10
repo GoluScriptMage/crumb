@@ -48,10 +48,15 @@ sudo mv crumb /usr/local/bin/
 | `crumb idea` | List ideas (newest first) |
 | `crumb task "do thing"` | Add a task |
 | `crumb task` | List tasks with status badges |
-| `crumb task clear` | Nuke all tasks |
+| `crumb task clear` | Nuke all tasks (double keyword) |
+| `crumb clear clear` | Nuke all tasks (dedicated command) |
 | `crumb done <id>` | Mark task ✔ done |
 | `crumb cancel <id>` | Mark task ✖ canceled |
 | `crumb fail <id>` | Mark task ✖ failed |
+| `crumb version` | Print crumb version |
+| `crumb --version` | Print crumb version (Cobra flag) |
+| `crumb edit <id> <text>` | Edit a task's text by ID |
+| `crumb delete <id>` | Delete a task by ID |
 | `crumb next "focus"` | Set your current focus |
 | `crumb next` | Show current focus |
 | `crumb next clear` | Clear focus |
@@ -131,6 +136,12 @@ Tasks show colored status inline:
 - `[• pending]` — active
 - `[✖ canceled]` — won't do
 - `[✖ failed]` — tried, blocked
+
+---
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
 
 ---
 

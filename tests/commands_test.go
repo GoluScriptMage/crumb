@@ -2,11 +2,11 @@ package tests
 
 import (
 	"crumb/cmd"
-	"crumb/helpers"
 	"crumb/store"
-	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -44,8 +44,8 @@ func TestTask_AddAndList(t *testing.T) {
 		if task.Status != "pending" {
 			t.Fatalf("expected pending status, got %s", task.Status)
 		}
-		if len(task.ID) != 3 {
-			t.Fatalf("expected 3-char id, got %q", task.ID)
+		if len(task.ID) != 4 {
+			t.Fatalf("expected 4-char id, got %q", task.ID)
 		}
 	}
 
@@ -54,25 +54,20 @@ func TestTask_AddAndList(t *testing.T) {
 	}
 }
 
-func TestTask_ClearRequiresDouble(t *testing.T) {
+func TestFail_Command(t *testing.T) {
 	cleanup := setupTestDB(t)
 	defer cleanup()
 
-	cmd.TaskCmd().RunE(cmd.TaskCmd(), []string{"one"})
-	if err := cmd.TaskCmd().RunE(cmd.TaskCmd(), []string{"clear"}); err != nil {
-		t.Fatalf("single clear returned error: %v", err)
-	}
+	cmd.TaskCmd().RunE(cmd.TaskCmd(), []string{"task fail me"})
 	data, _ := store.ReadData()
-	if len(data.Tasks) != 1 {
-		t.Fatalf("single 'clear' should not clear tasks, got %d", len(data.Tasks))
-	}
+	id := data.Tasks[0].ID
 
-	if err := cmd.TaskCmd().RunE(cmd.TaskCmd(), []string{"clear", "clear"}); err != nil {
-		t.Fatalf("double clear failed: %v", err)
+	if err := cmd.FailCmd().RunE(cmd.FailCmd(), []string{id}); err != nil {
+		t.Fatalf("fail failed: %v", err)
 	}
 	data, _ = store.ReadData()
-	if len(data.Tasks) != 0 {
-		t.Fatalf("double 'clear' should clear tasks, got %d", len(data.Tasks))
+	if data.Tasks[0].Status != "failed" {
+		t.Fatalf("expected failed status, got %s", data.Tasks[0].Status)
 	}
 }
 
@@ -97,28 +92,7 @@ func TestDone_Command(t *testing.T) {
 	}
 }
 
-func TestCancel_Command(t *testing.T) {
-	cleanup := setupTestDB(t)
-	defer cleanup()
-
-	cmd.TaskCmd().RunE(cmd.TaskCmd(), []string{"task one"})
-	data, _ := store.ReadData()
-	id := data.Tasks[0].ID
-
-	if err := cmd.CancelCmd().RunE(cmd.CancelCmd(), []string{id}); err != nil {
-		t.Fatalf("cancel failed: %v", err)
-	}
-	data, _ = store.ReadData()
-	if data.Tasks[0].Status != "canceled" {
-		t.Fatalf("expected canceled status, got %s", data.Tasks[0].Status)
-	}
-
-	if err := cmd.CancelCmd().RunE(cmd.CancelCmd(), []string{}); err != nil {
-		t.Fatalf("cancel no args returned error: %v", err)
-	}
-}
-
-func TestDelete_Command(t *testing.T) {
+func TestDel_Command(t *testing.T) {
 	cleanup := setupTestDB(t)
 	defer cleanup()
 
@@ -126,37 +100,24 @@ func TestDelete_Command(t *testing.T) {
 	data, _ := store.ReadData()
 	removeID := data.Tasks[1].ID
 
-	if err := cmd.DeleteCmd().RunE(cmd.DeleteCmd(), []string{removeID}); err != nil {
-		t.Fatalf("delete failed: %v", err)
+	if err := cmd.DelCmd().RunE(cmd.DelCmd(), []string{removeID}); err != nil {
+		t.Fatalf("del failed: %v", err)
 	}
 	data, _ = store.ReadData()
 	if len(data.Tasks) != 1 {
-		t.Fatalf("expected 1 task after delete, got %d", len(data.Tasks))
+		t.Fatalf("expected 1 task after del, got %d", len(data.Tasks))
 	}
 	if data.Tasks[0].Text != "keep" {
 		t.Fatalf("wrong task removed: %+v", data.Tasks)
 	}
 
-	if err := cmd.DeleteCmd().RunE(cmd.DeleteCmd(), []string{}); err != nil {
-		t.Fatalf("delete no args returned error: %v", err)
+	// Del all
+	if err := cmd.DelCmd().RunE(cmd.DelCmd(), []string{"all"}); err != nil {
+		t.Fatalf("del all failed: %v", err)
 	}
-}
-
-func TestClear_Command(t *testing.T) {
-	cleanup := setupTestDB(t)
-	defer cleanup()
-
-	cmd.TaskCmd().RunE(cmd.TaskCmd(), []string{"a", "b", "c"})
-	if err := cmd.ClearCmd().RunE(cmd.ClearCmd(), []string{"clear"}); err != nil {
-		t.Fatalf("clear failed: %v", err)
-	}
-	data, _ := store.ReadData()
+	data, _ = store.ReadData()
 	if len(data.Tasks) != 0 {
-		t.Fatalf("expected 0 tasks after clear, got %d", len(data.Tasks))
-	}
-
-	if err := cmd.ClearCmd().RunE(cmd.ClearCmd(), []string{}); err != nil {
-		t.Fatalf("clear no args returned error: %v", err)
+		t.Fatalf("expected 0 tasks after del all, got %d", len(data.Tasks))
 	}
 }
 
@@ -168,12 +129,21 @@ func TestIdea_Command(t *testing.T) {
 		t.Fatalf("add ideas failed: %v", err)
 	}
 	data, _ := store.ReadData()
-	if len(data.Ideas) != 2 {
-		t.Fatalf("expected 2 ideas, got %d", len(data.Ideas))
+	if len(data.Ideas) != 1 {
+		t.Fatalf("expected 1 idea joined, got %d", len(data.Ideas))
 	}
 
 	if err := cmd.IdeaCmd().RunE(cmd.IdeaCmd(), []string{}); err != nil {
 		t.Fatalf("list ideas failed: %v", err)
+	}
+
+	// Delete idea
+	if err := cmd.IdeaCmd().RunE(cmd.IdeaCmd(), []string{"del", "1"}); err != nil {
+		t.Fatalf("del idea failed: %v", err)
+	}
+	data, _ = store.ReadData()
+	if len(data.Ideas) != 0 {
+		t.Fatalf("expected 0 ideas after delete, got %d", len(data.Ideas))
 	}
 }
 
@@ -181,11 +151,11 @@ func TestNote_Command(t *testing.T) {
 	cleanup := setupTestDB(t)
 	defer cleanup()
 
-	if err := cmd.NoteCmd().RunE(cmd.NoteCmd(), []string{"a note"}); err != nil {
+	if err := cmd.NoteCmd().RunE(cmd.NoteCmd(), []string{"a note with spaces"}); err != nil {
 		t.Fatalf("add note failed: %v", err)
 	}
 	data, _ := store.ReadData()
-	if len(data.Notes) != 1 || data.Notes[0] != "a note" {
+	if len(data.Notes) != 1 || data.Notes[0] != "a note with spaces" {
 		t.Fatalf("unexpected notes: %+v", data.Notes)
 	}
 
@@ -193,65 +163,62 @@ func TestNote_Command(t *testing.T) {
 		t.Fatalf("list notes failed: %v", err)
 	}
 
-	if err := cmd.NoteCmd().RunE(cmd.NoteCmd(), []string{"too", "many"}); err != nil {
-		t.Fatalf("note multiple args returned error: %v", err)
+	// Delete note
+	if err := cmd.NoteCmd().RunE(cmd.NoteCmd(), []string{"del", "1"}); err != nil {
+		t.Fatalf("del note failed: %v", err)
 	}
-	fmt.Println("All done`")
+	data, _ = store.ReadData()
+	if len(data.Notes) != 0 {
+		t.Fatalf("expected 0 notes after delete, got %d", len(data.Notes))
+	}
 }
 
-func TestNext_Command(t *testing.T) {
+func TestTimer_Command(t *testing.T) {
 	cleanup := setupTestDB(t)
 	defer cleanup()
 
-	if err := cmd.NextCmd().RunE(cmd.NextCmd(), []string{"ship it"}); err != nil {
-		t.Fatalf("set next failed: %v", err)
+	if err := cmd.TimerCmd().RunE(cmd.TimerCmd(), []string{"50", "Doing DSA"}); err != nil {
+		t.Fatalf("start timer failed: %v", err)
 	}
 	data, _ := store.ReadData()
-	if data.Next != "ship it" {
-		t.Fatalf("expected 'ship it', got %q", data.Next)
+	if data.Timer == nil || data.Timer.Minutes != 50 || data.Timer.Task != "Doing DSA" {
+		t.Fatalf("unexpected timer state: %+v", data.Timer)
 	}
 
-	if err := cmd.NextCmd().RunE(cmd.NextCmd(), []string{"clear"}); err != nil {
-		t.Fatalf("clear next failed: %v", err)
+	// View timer
+	if err := cmd.TimerCmd().RunE(cmd.TimerCmd(), []string{}); err != nil {
+		t.Fatalf("view timer failed: %v", err)
+	}
+
+	// Stop timer
+	if err := cmd.TimerCmd().RunE(cmd.TimerCmd(), []string{"stop"}); err != nil {
+		t.Fatalf("stop timer failed: %v", err)
 	}
 	data, _ = store.ReadData()
-	if data.Next != "" {
-		t.Fatalf("expected empty next, got %q", data.Next)
-	}
-
-	if err := cmd.NextCmd().RunE(cmd.NextCmd(), []string{}); err != nil {
-		t.Fatalf("show next failed: %v", err)
-	}
-
-	if err := cmd.NextCmd().RunE(cmd.NextCmd(), []string{"a", "b"}); err != nil {
-		t.Fatalf("next multiple args returned error: %v", err)
+	if data.Timer != nil {
+		t.Fatalf("expected timer to be nil after stop, got %+v", data.Timer)
 	}
 }
 
-func TestGenerateShortId(t *testing.T) {
-	seen := map[string]bool{}
-	for i := 0; i < 50; i++ {
-		id := cmd.GenerateShortId()
-		if len(id) != 3 {
-			t.Fatalf("expected 3-char id, got %q", id)
-		}
-		for _, c := range id {
-			if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f')) {
-				t.Fatalf("non-hex char in id %q", id)
-			}
-		}
-		seen[id] = true
-	}
-	if len(seen) < 40 {
-		t.Fatalf("ids not random enough, only %d distinct of 50", len(seen))
-	}
-}
+func TestVersion_Command(t *testing.T) {
+	cleanup := setupTestDB(t)
+	defer cleanup()
 
-func TestFormatStatus(t *testing.T) {
-	for _, s := range []string{"done", "canceled", "failed", "pending", "weird"} {
-		if helpers.FormatStatus(s) == "" {
-			t.Fatalf("FormatStatus(%q) returned empty", s)
-		}
+	old := os.Stdout
+	r, w, _ := os.Pipe()
+	os.Stdout = w
+
+	cmd.VersionCmd().RunE(cmd.VersionCmd(), []string{})
+
+	w.Close()
+	os.Stdout = old
+
+	out, _ := io.ReadAll(r)
+	output := string(out)
+
+	want := "crumb version " + cmd.Version()
+	if !strings.Contains(output, want) {
+		t.Fatalf("expected version output to contain %q, got %q", want, output)
 	}
 }
 
@@ -276,10 +243,10 @@ func TestStore_WriteReadRoundTrip(t *testing.T) {
 	defer cleanup()
 
 	in := store.CrumbData{
-		Next:  "focus",
 		Tasks: []store.Task{{ID: "abc", Text: "t", Status: "pending"}},
 		Ideas: []string{"idea"},
 		Notes: []string{"note"},
+		Timer: &store.TimerState{Task: "dsa", Minutes: 25, StartedAt: 100, Duration: 1500},
 	}
 	if err := store.WriteData(in); err != nil {
 		t.Fatalf("WriteData failed: %v", err)
@@ -289,8 +256,9 @@ func TestStore_WriteReadRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadData failed: %v", err)
 	}
-	if out.Next != "focus" || len(out.Tasks) != 1 || out.Tasks[0].ID != "abc" ||
-		len(out.Ideas) != 1 || len(out.Notes) != 1 {
+	if len(out.Tasks) != 1 || out.Tasks[0].ID != "abc" ||
+		len(out.Ideas) != 1 || len(out.Notes) != 1 ||
+		out.Timer == nil || out.Timer.Task != "dsa" {
 		t.Fatalf("round-trip mismatch: %+v", out)
 	}
 }
