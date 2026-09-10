@@ -5,31 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v1.4.0] — 2026-09-10
+## [v1.3.0] — 2026-09-10
 
 ### Added
 - `crumb timer <minutes> [task]` — live running aesthetic terminal desk clock with 20 centered random ASCII mascots (Sia, Cat, Fox, Bunny, Bear, Frog, Owl, Penguin, Ghost, Slime, Robot, Knight, Wizard, Ninja, Samurai, Pirate, Astronaut, Demon, Reaper, Dragon), clean progress bar, and Ctrl+C background detach.
 - `crumb del <id>` & `crumb del all` — intuitive, streamlined task deletion.
+- `crumb fail <id>` — mark a task as failed (mirrors `done`).
 - Index-based deletion for notes (`crumb note del <num>`) and ideas (`crumb idea del <num>`).
 - Subtle monochrome tactile CLI feedback (dim prefixes, bold white typography, zero harsh RGB clown colors).
+- `crumb version` & `crumb --version` — print current crumb version.
 
 ### Changed
 - Converted all read operations (dashboard, task list, note list, idea list) to `store.ReadData()` (zero disk IO on reads).
 - Deprecated and removed bloated `next`, `cancel`, `edit`, and `clear clear` commands.
-
-## [v1.3.0] — 2026-09-08
-
-### Added
-- `crumb fail <id>` — mark a task as failed (mirrors `done`/`cancel`).
-- `crumb version` — print the crumb version.
-- `crumb --version` — Cobra built-in version flag.
-- `crumb edit <id> <text...>` — edit a task's text by ID.
-- `CHANGELOG.md` — version history document.
-- README sync for new commands (`fail`, `version`, `edit`, `delete`, `clear clear`).
-
-### Changed
-- Task IDs are now 4-char hex (16^4 = 65536 space), up from 3-char.
-- `WriteData` is truly atomic: writes to a temp file then `os.Rename` over the target.
+- Task IDs are now 4-char hex (16^4 = 65536 space).
+- `WriteData` is truly atomic: writes to a temp file then `os.Rename` over target.
 
 ## [v1.2.0] — 2026-08-07
 
