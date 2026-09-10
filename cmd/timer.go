@@ -346,7 +346,6 @@ func buildTimerFrame(m Mascot, task string, rem int64, total int64, mins int, te
 		padFoot = 0
 	}
 	addLine(fmt.Sprintf("%s%s%s%s", strings.Repeat(" ", padFoot), helpers.Gray, footer, resetSeq))
-	addEmptyLine()
 
 	return sb.String(), lineCount
 }
@@ -435,28 +434,21 @@ var timerCmd = &cobra.Command{
 		// Clear terminal screen once before animation starts
 		fmt.Print("\033[H\033[2J")
 
-		firstFrame := true
-		var lastLineCount int
-
 		for {
 			now := time.Now().Unix()
 			elapsed := now - data.Timer.StartedAt
 			rem := int64(data.Timer.Duration) - elapsed
 
 			termW := getTerminalWidth()
-			frame, lineCount := buildTimerFrame(m, data.Timer.Task, rem, int64(data.Timer.Duration), data.Timer.Minutes, termW)
+			frame, _ := buildTimerFrame(m, data.Timer.Task, rem, int64(data.Timer.Duration), data.Timer.Minutes, termW)
 
-			if !firstFrame && lastLineCount > 0 {
-				// Overwrite the last frame in-place!
-				fmt.Printf("\033[%dA\r", lastLineCount)
-			}
+			// Position cursor at top-left home (row 1, col 1) — ZERO drift, ZERO growing gap!
+			fmt.Print("\033[H")
 			fmt.Print(frame)
-			firstFrame = false
-			lastLineCount = lineCount
 
 			if rem <= 0 {
 				fmt.Print("\a") // Terminal bell on completion
-				fmt.Print("\033[?25h")
+				fmt.Print("\033[?25h\n")
 				helpers.Success("Time's up! Great session on %s.", data.Timer.Task)
 				fmt.Println()
 				return nil
