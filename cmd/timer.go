@@ -432,6 +432,9 @@ var timerCmd = &cobra.Command{
 		fmt.Print("\033[?25l")
 		defer fmt.Print("\033[?25h")
 
+		// Clear terminal screen once before animation starts
+		fmt.Print("\033[H\033[2J")
+
 		firstFrame := true
 		var lastLineCount int
 
