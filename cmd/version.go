@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var version = "dev"
+var version = "v1.4.0"
 
 // Version returns the current version string (exported for tests).
 func Version() string { return version }

@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v1.4.0] — 2026-09-10
 
 ### Added
-- `crumb timer <minutes> [task]` — live running aesthetic terminal desk clock with centered ASCII mascots (Sia, Pikachu, Rabbit, Undead Knight), clean progress bar, and Ctrl+C background detach.
+- `crumb timer <minutes> [task]` — live running aesthetic terminal desk clock with 20 centered random ASCII mascots (Sia, Cat, Fox, Bunny, Bear, Frog, Owl, Penguin, Ghost, Slime, Robot, Knight, Wizard, Ninja, Samurai, Pirate, Astronaut, Demon, Reaper, Dragon), clean progress bar, and Ctrl+C background detach.
 - `crumb del <id>` & `crumb del all` — intuitive, streamlined task deletion.
 - Index-based deletion for notes (`crumb note del <num>`) and ideas (`crumb idea del <num>`).
 - Subtle monochrome tactile CLI feedback (dim prefixes, bold white typography, zero harsh RGB clown colors).

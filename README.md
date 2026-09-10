@@ -24,13 +24,13 @@ Done. Back to work. Zero friction.
 ## Install
 
 ```bash
-go install github.com/yourusername/crumb@latest
+go install github.com/GoluScriptMage/crumb@latest
 ```
 
 Or clone & build:
 
 ```bash
-git clone https://github.com/yourusername/crumb
+git clone https://github.com/GoluScriptMage/crumb
 cd crumb
 go build -o crumb .
 sudo mv crumb /usr/local/bin/
