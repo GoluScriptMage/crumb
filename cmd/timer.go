@@ -220,29 +220,61 @@ func printCentered(text string, width int, prefix string, suffix string) {
 	fmt.Printf("%s%s%s%s\n", strings.Repeat(" ", pad), prefix, text, suffix)
 }
 
-func renderTimerFrame(m Mascot, task string, rem int64, total int64, mins int) {
+func buildTimerFrame(m Mascot, task string, rem int64, total int64, mins int, termW int) (string, int) {
 	const boxW = 45
 	resetSeq := helpers.Reset
 
-	fmt.Println()
+	indentLen := (termW - boxW) / 2
+	if indentLen < 0 {
+		indentLen = 0
+	}
+	indent := strings.Repeat(" ", indentLen)
+
+	var sb strings.Builder
+	lineCount := 0
+
+	addLine := func(content string) {
+		sb.WriteString(indent)
+		sb.WriteString(content)
+		sb.WriteString("\033[K\n")
+		lineCount++
+	}
+
+	addEmptyLine := func() {
+		sb.WriteString("\033[K\n")
+		lineCount++
+	}
+
+	addEmptyLine()
+
 	// 1. Center Mascot
 	for _, line := range m.Lines {
-		printCentered(line, boxW, helpers.White, resetSeq)
+		vw := visualWidth(line)
+		pad := (boxW - vw) / 2
+		if pad < 0 {
+			pad = 0
+		}
+		addLine(fmt.Sprintf("%s%s%s%s", strings.Repeat(" ", pad), helpers.White, line, resetSeq))
 	}
-	fmt.Println()
+	addEmptyLine()
 
 	// 2. Center Task Name
 	taskDisplay := fmt.Sprintf("FOCUS: %s", task)
 	if len(taskDisplay) > 38 {
 		taskDisplay = taskDisplay[:35] + "..."
 	}
-	printCentered(taskDisplay, boxW, helpers.Bold+helpers.White, resetSeq)
-	fmt.Println()
+	vwTask := visualWidth(taskDisplay)
+	padTask := (boxW - vwTask) / 2
+	if padTask < 0 {
+		padTask = 0
+	}
+	addLine(fmt.Sprintf("%s%s%s%s", strings.Repeat(" ", padTask), helpers.Bold+helpers.White, taskDisplay, resetSeq))
+	addEmptyLine()
 
 	// 3. Render Aesthetic Box
 	innerW := boxW - 2
-	fmt.Printf("%s╭%s╮%s\n", helpers.Gray, strings.Repeat("─", innerW), resetSeq)
-	fmt.Printf("%s│%s│%s\n", helpers.Gray, strings.Repeat(" ", innerW), resetSeq)
+	addLine(fmt.Sprintf("%s╭%s╮%s", helpers.Gray, strings.Repeat("─", innerW), resetSeq))
+	addLine(fmt.Sprintf("%s│%s│%s", helpers.Gray, strings.Repeat(" ", innerW), resetSeq))
 
 	// Digits
 	if rem < 0 {
@@ -253,7 +285,7 @@ func renderTimerFrame(m Mascot, task string, rem int64, total int64, mins int) {
 	timeStr := fmt.Sprintf("%02d : %02d", minutes, seconds)
 	timePad := (innerW - len(timeStr)) / 2
 	timeRemainingSpace := innerW - timePad - len(timeStr)
-	fmt.Printf("%s│%s%s%s%s%s%s│%s\n",
+	addLine(fmt.Sprintf("%s│%s%s%s%s%s%s│%s",
 		helpers.Gray,
 		strings.Repeat(" ", timePad),
 		helpers.Bold+helpers.White,
@@ -262,9 +294,9 @@ func renderTimerFrame(m Mascot, task string, rem int64, total int64, mins int) {
 		helpers.Gray,
 		strings.Repeat(" ", timeRemainingSpace),
 		resetSeq,
-	)
+	))
 
-	fmt.Printf("%s│%s│%s\n", helpers.Gray, strings.Repeat(" ", innerW), resetSeq)
+	addLine(fmt.Sprintf("%s│%s│%s", helpers.Gray, strings.Repeat(" ", innerW), resetSeq))
 
 	// Progress bar
 	const barLen = 28
@@ -291,7 +323,7 @@ func renderTimerFrame(m Mascot, task string, rem int64, total int64, mins int) {
 
 	barPad := (innerW - barLen) / 2
 	barRightSpace := innerW - barPad - barLen
-	fmt.Printf("%s│%s%s%s%s%s%s%s│%s\n",
+	addLine(fmt.Sprintf("%s│%s%s%s%s%s%s%s│%s",
 		helpers.Gray,
 		strings.Repeat(" ", barPad),
 		helpers.White,
@@ -301,15 +333,27 @@ func renderTimerFrame(m Mascot, task string, rem int64, total int64, mins int) {
 		strings.Repeat(" ", barRightSpace),
 		resetSeq,
 		resetSeq,
-	)
+	))
 
-	fmt.Printf("%s│%s│%s\n", helpers.Gray, strings.Repeat(" ", innerW), resetSeq)
-	fmt.Printf("%s╰%s╯%s\n", helpers.Gray, strings.Repeat("─", innerW), resetSeq)
+	addLine(fmt.Sprintf("%s│%s│%s", helpers.Gray, strings.Repeat(" ", innerW), resetSeq))
+	addLine(fmt.Sprintf("%s╰%s╯%s", helpers.Gray, strings.Repeat("─", innerW), resetSeq))
 
 	// 4. Footer
 	footer := fmt.Sprintf("%dm sprint  ·  ctrl+c to background", mins)
-	printCentered(footer, boxW, helpers.Gray, resetSeq)
-	fmt.Println()
+	vwFoot := visualWidth(footer)
+	padFoot := (boxW - vwFoot) / 2
+	if padFoot < 0 {
+		padFoot = 0
+	}
+	addLine(fmt.Sprintf("%s%s%s%s", strings.Repeat(" ", padFoot), helpers.Gray, footer, resetSeq))
+	addEmptyLine()
+
+	return sb.String(), lineCount
+}
+
+func renderTimerFrame(m Mascot, task string, rem int64, total int64, mins int) {
+	frame, _ := buildTimerFrame(m, task, rem, total, mins, 80)
+	fmt.Print(frame)
 }
 
 var timerCmd = &cobra.Command{
@@ -388,15 +432,24 @@ var timerCmd = &cobra.Command{
 		fmt.Print("\033[?25l")
 		defer fmt.Print("\033[?25h")
 
+		firstFrame := true
+		var lastLineCount int
+
 		for {
 			now := time.Now().Unix()
 			elapsed := now - data.Timer.StartedAt
 			rem := int64(data.Timer.Duration) - elapsed
 
-			// Clear terminal screen and position at top-left
-			fmt.Print("\033[H\033[2J")
+			termW := getTerminalWidth()
+			frame, lineCount := buildTimerFrame(m, data.Timer.Task, rem, int64(data.Timer.Duration), data.Timer.Minutes, termW)
 
-			renderTimerFrame(m, data.Timer.Task, rem, int64(data.Timer.Duration), data.Timer.Minutes)
+			if !firstFrame && lastLineCount > 0 {
+				// Overwrite the last frame in-place!
+				fmt.Printf("\033[%dA\r", lastLineCount)
+			}
+			fmt.Print(frame)
+			firstFrame = false
+			lastLineCount = lineCount
 
 			if rem <= 0 {
 				fmt.Print("\a") // Terminal bell on completion
